@@ -10,13 +10,13 @@
 	<style type="text/css">
 		#map {
 			width:100%;
-			height:500px;
+			height:360px;
 		}
 	</style>
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 </head>
 <body>
-<div class="container" ng-app="farmersmarkets" ng-controller="MainController">
+<div class="container-fluid" ng-app="farmersmarkets" ng-controller="MainController">
   <div id="map"></div>
   <select class="form-control" ng-model="selectedDay" ng-options="name for name in dayNames"></select>
   <div id="marketList" class="list-group">
