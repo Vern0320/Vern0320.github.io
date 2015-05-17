@@ -21,7 +21,8 @@
 <body>
 <div id="main" class="container-fluid" ng-app="farmersmarkets" ng-controller="MainController">
   <div id="map"></div>
-  <select class="form-control" ng-model="selectedDay" ng-options="name for name in dayNames"></select>
+  <div><h2>Baltimore Farmer's Markets</h2></div>
+  <div><select class="form-control" ng-model="selectedDay" ng-options="name for name in dayNames"></select></div>
   <div id="marketList" class="list-group">
   	<div ng-repeat="market in markets | day:selectedDay" class="panel panel-primary">
   		<div class="panel-heading"><h3 class="panel-title">{{market.name}}</h3></div>
