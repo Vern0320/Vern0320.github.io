@@ -13,9 +13,10 @@
 			height:500px;
 		}
 	</style>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 </head>
 <body>
-<div ng-app="farmersmarkets" ng-controller="MainController">
+<div class="container" ng-app="farmersmarkets" ng-controller="MainController">
   <div id="map"></div>
   <select class="form-control" ng-model="selectedDay" ng-options="name for name in dayNames"></select>
   <div id="marketList" class="list-group">
