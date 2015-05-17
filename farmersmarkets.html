@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+	<script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js"></script>
+	<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBXthdOGEuSfjSZQ4my3IN9R1yF6q9rQZg"></script>
+	<style type="text/css">
+		#map {
+			width:100%;
+			height:300px;
+		}
+	</style>
+</head>
+<body>
+<div ng-app="farmersmarkets" ng-controller="MainController">
+  <div id="map"></div>
+  <select class="form-control" ng-model="selectedDay" ng-options="name for name in dayNames"></select>
+  <div id="marketList" class="list-group">
+  	<div ng-repeat="market in markets | day:selectedDay" class="panel panel-default">
+  		<div class="panel-heading"><h3 class="panel-title">{{market.name}}</h3></div>
+  		<div class="panel-body">
+  			<div>
+	  			<strong>address</strong>
+	  			{{market.address}}
+	  		</div>
+	  		<div>
+		  		<strong>distance</strong>
+		  		{{market.distance.text}}
+		  	</div>
+	  		<div>
+		  		<strong>hours</strong>
+		  		{{market.openingtime}}-{{market.closingtime}}
+		  	</div>
+	  	</div>
+  	</div>
+  </div>
+</div>
+<script type="text/javascript">
+	var app = angular.module('farmersmarkets', []);
+	app.filter('day', function() {
+		return function(markets, day) {
+			return markets.filter(function (market) {
+				return day == market.day_;
+			});
+		};
+	});
+	app.controller('MainController', ['$scope', '$http', function($scope, $http) {
+	    $scope.dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+	    $scope.selectedDay = $scope.dayNames[(new Date()).getDay()];
+	    $scope.markets = [];
+	    $.get('https://data.baltimorecity.gov/resource/atzp-3tnt.json').done(function(data) {
+			navigator.geolocation.getCurrentPosition(function(position) {
+			    var mapOptions = {
+			        center: { lat: position.coords.latitude, lng: position.coords.longitude},
+			        zoom: 12
+			    };
+			    var map = new google.maps.Map(document.getElementById('map'), mapOptions);
+		    	data.forEach(function(item) {
+		    		if(item['location_1']) {
+		    			item.address = JSON.parse(item.location_1.human_address).address;
+			    		new google.maps.Marker({
+			    			position: new google.maps.LatLng(item.location_1.latitude, item.location_1.longitude),
+			    			map: map,
+			    			title: item.name
+			    		});
+		    		} else item.address = 'not provided';
+		    		$scope.markets.push(item);
+		    	});
+
+		    	var withLocation = $scope.markets.filter(function (market) { return market['location_1']; });
+		    	$scope.markets.forEach(function(market) { if(!market['location_1']) market.distance = {text: 'unknown', value: Infinity}; });
+
+		    	var distService = new google.maps.DistanceMatrixService();
+				distService.getDistanceMatrix({
+				    origins: [new google.maps.LatLng(position.coords.latitude, position.coords.longitude)],
+				    destinations: withLocation.map(function(market) {
+				    	return new google.maps.LatLng(market.location_1.latitude, market.location_1.longitude);
+				    }),
+				    travelMode: google.maps.TravelMode.DRIVING,
+				    unitSystem: google.maps.UnitSystem.IMPERIAL
+				}, function(resp, status) {
+					if(status == 'OK')
+						for (var i = withLocation.length - 1; i >= 0; i--) {
+							withLocation[i].distance = resp.rows[0].elements[i].distance;
+						};
+				    $scope.$apply($scope.markets.sort(function(a, b) { return a.distance.value - b.distance.value; }));
+				});
+			});
+	    });
+	}]);
+</script>
+</body>
+</html>
