@@ -92,6 +92,8 @@
 						};
 				    $scope.$apply($scope.markets.sort(function(a, b) { return a.distance.value - b.distance.value; }));
 				});
+			}, function() { // user location not available
+				alert('sorry, we need your location')
 			});
 	    });
 	}]);
