@@ -23,7 +23,7 @@ var makeMarker = function(map, coords, title) {
     });
 };
 
-var findAndSortByDistance = function(originCoords, markets, callback) {
+var getDistances = function(originCoords, markets, callback) {
     return new google.maps.DistanceMatrixService().getDistanceMatrix({
         origins: [new google.maps.LatLng(originCoords.latitude, originCoords.longitude)],
         destinations: markets.map(function(m) {
@@ -39,22 +39,28 @@ app.controller('MainController', ['$scope', '$http', function($scope, $http) {
     $scope.selectedDay = $scope.dayNames[(new Date()).getDay()];
     $scope.markets = [];
     $.get('https://data.baltimorecity.gov/resource/atzp-3tnt.json').done(function(data) {
+        // GET succeeded; data should be an array of farmer's markets
         navigator.geolocation.getCurrentPosition(function(position) {
+            // location succeded
             var map = makeMap('map', position.coords);
-            data.forEach(function(item) {
-                if(item['location_1']) {
-                    item.address = JSON.parse(item.location_1.human_address).address;
-                    makeMarker(map, item.location_1, item.name);
+            var withLocation = [];
+
+            data.forEach(function(market) {
+                $scope.markets.push(market);
+
+                if(market['location_1'] != null) {
+                    withLocation.push(market);
+
+                    market.address = JSON.parse(market.location_1.human_address).address;
+                    makeMarker(map, market.location_1, market.name);
                 } else {
-                    item.address = 'not provided';
-                    item.distance = { text: 'unknown', value: Infinity };
+                    market.address = 'not provided';
+                    // fake distance mimicking the real ones returned by getDistances
+                    market.distance = { text: 'unknown', value: Infinity };
                 }
-                $scope.markets.push(item);
             });
 
-            var withLocation = $scope.markets.filter(function (market) { return market['location_1']; });
-
-            findAndSortByDistance(position.coords, withLocation, function(resp, status) {
+            getDistances(position.coords, withLocation, function(resp, status) {
                 if(status == 'OK')
                     for (var i = withLocation.length - 1; i >= 0; i--) {
                         withLocation[i].distance = resp.rows[0].elements[i].distance;
